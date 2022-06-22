@@ -1,0 +1,60 @@
+---
+title: "Comparisons take 1"
+author: "S. Haire"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(readr)
+library(dplyr)
+library(ggplot2)
+library(ggpubr)
+library(ggcorset)
+```
+
+```{r dataprep, include=FALSE}
+d<-read_csv('./data/1996_2015_Neo_trop_RE2_BA_TPH_dataformat.csv')
+## fixing names and factor levels
+d$severity<-recode(d$severity, H="High", M="Moderate", L="Low", U="Unburned")
+d$severity<-factor(d$severity, levels=c("High", "Moderate", "Low", "Unburned")) 
+d$BROAD_CT<-recode(d$BROAD_CT, "mixed conifer Forest" = "Mixed Conifer",
+                   "Ponderosa pine forest" = "Ponderosa Pine",
+                   "Broadleaf Evergreen Woodland" = "Broadleaf Evergreen")
+d$year=factor(d$year, levels = c("year 1996", "year 2015"))
+d$year<-recode(d$year, "year 2015" = "2015", "year 1996" = "1996")
+
+```
+### A first report exploring data distributions between sample years, burn severity classes, and vegetation/cover types.
+
+### Basic boxplots and comparison statistics
+The first plot compares the distribution of basal area values measured in 1996 and 2015. The p-value gives a sense of difference in the two groups from a t-test. The graphs divide the data into cover types (columns doing down) and severity levels (rows going across).
+
+```{r compareba, echo=FALSE, warning=FALSE, fig.height = 9, fig.width = 9, fig.align = "center"}
+my_comparisons = list(c("2015", "1996")) # compare by sample year
+p<-ggboxplot(d, x = "year", y = "BA", color = "BROAD_CT", palette = "jco", 
+  facet.by=c("severity", "BROAD_CT"), add="point") + 
+  stat_compare_means(comparisons = my_comparisons, method="t.test", label.y=c(60)) +
+  theme_gray() + theme(strip.text.x = element_text(size = 10, colour = "black")) +
+  theme(strip.text.y = element_text(size = 10, colour = "black"))
+ggpar(p, legend.title="", legend="top", xlab="Year",ylab="Basal Area")
+
+```
+
+The second plots compare measured values of Trees per Hectare.
+
+```{r comparetph, echo=FALSE, warning=FALSE, fig.height = 9, fig.width = 9, fig.align = "center"}
+my_comparisons = list(c("2015", "1996")) # compare by sample year
+p<-ggboxplot(d, x = "year", y = "TPH", color = "BROAD_CT", palette = "jco", 
+  facet.by=c("severity", "BROAD_CT"), add="point") + 
+  stat_compare_means(comparisons = my_comparisons, method="t.test", label.y=c(1400)) +
+  theme_gray() + theme(strip.text.x = element_text(size = 10, colour = "black")) +
+  theme(strip.text.y = element_text(size = 10, colour = "black"))
+ggpar(p, legend.title="", legend="top", xlab="Year",ylab="Trees per Hectare")
+
+```
+### Trying out a new package!
+Coming soon..."corset plots." These are pretty cool:) 
+https://cran.r-project.org/web/packages/ggcorset/vignettes/corset_plot_intro.html
+
