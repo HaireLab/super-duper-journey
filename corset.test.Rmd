@@ -1,0 +1,71 @@
+---
+title: "corset_test"
+author: "S. Haire"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+---
+title: "Corset plot example"
+author: "S. Haire"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(readr)
+library(dplyr)
+library(ggplot2)
+library(ggpubr)
+library(reshape2)
+library(MetBrewer)
+#devtools::install_github("kbelisar/ggcorset") # for latest ver
+library(ggcorset)
+```
+
+```{r dataprep, include=FALSE}
+d<-read_csv('./data/1996_2015_Neo_trop_RE2_BA_TPH_dataformat.csv')
+## facet by cover types and severity
+d$severity<-recode(d$severity, H="High", M="Moderate", L="Low", U="Unburned")
+d$severity<-factor(d$severity, levels=c("High", "Moderate", "Low", "Unburned")) 
+d$BROAD_CT<-recode(d$BROAD_CT, "mixed conifer Forest" = "Mixed Conifer Forest",
+                   "Ponderosa pine forest" = "Ponderosa Pine Forest")
+d$year2<-recode(d$year, "year 2015" = "2015", "year 1996" = "1996")
+d2<- d %>% select(Plot_ID, Area, BA, TPH, severity, BROAD_CT, year2)
+## reaarange the data
+yr1<-d2[d2$year2=="1996",]
+yr2<-d2[d2$year2=="2015",]
+yr_df<-full_join(yr1, yr2, by="Plot_ID")
+names(yr_df)<-c("Plot_ID", "Island1", "BA.time1", "TPH.time1", "severity.time1",
+      "covertype.time1", "time1", "Island2", "BA.time2", "TPH.time2", "severity.time2",
+      "covertype.time2", "time2")
+##d3<-d2 %>% group_by(Plot_ID) %>% summarize(badiff=diff(BA), tphdiff=diff(TPH)) # 285
+## calc diff in BA
+yr_df$badiff=yr_df$BA.time2 - yr_df$BA.time1
+# Direction of Change for BA
+yr_df$direction <- ifelse(yr_df$badiff<0,"Decrease",
+                              ifelse(yr_df$badiff>0,"Increase","No Change"))
+yr_df$direction <- factor(yr_df$direction, 
+                              levels = c("Increase","No Change","Decrease"))
+## one cover type
+ct1<-yr_df%>% filter(covertype.time1=="Ponderosa Pine Forest")
+ct2<-yr_df%>% filter(covertype.time1=="Mixed Conifer Forest")
+```
+
+##  Plot the change in basal area by severity class
+Corset plots are a visualization technique used to visualize repeat measures at 2 time points (such as pre- and post- data). Specifically, corset plots visualize the distribution of measurements at each time point, as well as the trajectories of individual change. This method of visualization is ideal for showing the heterogeneity of data and differences by sub-groups. See: https://cran.r-project.org/web/packages/ggcorset/vignettes/corset_plot_intro.html
+
+Note: The faceting option in gg_corset only allows one grouping and I haven't found a work around for that issue yet. Just to demonstrate what the plots look like, I've subset the data to include Mixed Conifer Forest only.
+
+```{r bachange, echo=FALSE, warning=FALSE, fig.height = 9, fig.width = 9, fig.align = "center"}
+
+gg_corset(ct2, y_var1 = "BA.time1", y_var2 = "BA.time2", 
+  group = "Plot_ID", c_var = "severity.time1", eyelets = F, faceted=T, line_size=0.5) +
+  theme_ggcorset() + 
+  ggtitle("Mixed Conifer Forest: Change in Basal Area") + 
+  ylab("Basal Area") + xlab("") +
+  scale_x_discrete(labels = c("Time 1","Time 2")) +
+  guides(colour = guide_legend(override.aes = list(size = 3))) + 
+  theme(legend.title=element_blank())
+```
