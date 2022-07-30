@@ -1,0 +1,174 @@
+---
+title: "terrain plots"
+author: "S. Haire"
+date: "`r Sys.Date()`"
+output: 
+  html_document: 
+    df_print: paged
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(warning = FALSE, message = FALSE) 
+
+library(ggplot2)
+library(tidyr)
+library(dplyr)
+library(ggpubr)
+library(readr)
+library(patchwork)
+library(wesanderson)
+library(randomcoloR)
+
+# number of islands
+newpal5<- distinctColorPalette(5)
+## number of comm classes
+newpal8<- distinctColorPalette(8)
+pal6=wes_palette("GrandBudapest1")
+newpal2<-c('#191970','#ff0000',
+'#ffd700','#00ff00','#00ffff','#0000ff',
+'#ffb6c1','#006400') #https://mokole.com/palette.html
+```
+
+```{r dataprep, include=FALSE}
+## read data
+d<-read_csv("./data/allvars_v1.csv")
+names(d)
+## sample size by covertype (print table in Rmd)
+d %>% group_by(covertype) %>% count() %>% arrange(-n)
+## change index
+d$delta.ba<-d$BA.time2 - d$BA.time1
+d$delta.tph<-d$TPH.time2 - d$TPH.time1
+types<-c("Mixed Conifer Forest", "Broadleaf Evergreen Woodland",
+                     "Ponderosa Pine Forest", "Conifer Woodland")
+fwdat<- d %>% filter(covertype %in% types)
+fwdat$coverf<-factor(fwdat$covertype, levels=c("Mixed Conifer Forest", "Broadleaf Evergreen Woodland", "Ponderosa Pine Forest", "Conifer Woodland"))
+## circ plot: aspect and slope
+fwdat$aspect.deg<-fwdat$aspect*180/pi
+fwdat$slope.deg<-fwdat$slope*180/pi
+
+```
+
+### Exploring terrain metrics at the field plot locations
+
+#### Topography can influence many ecological processes because it is closely related to microclimates and their effects on soil properties, seed dispersal and germination, tree regeneration and growth. It is also a major factor in fire spread, both in facilitating spread and creating shelters or firebreaks. This report takes a first look at the topographic characteristics of the plot locations by covertype and by mountain range. 
+
+#### First, a summary of sample size for each cover type.
+
+```{r covertypes, echo=FALSE}
+fwdat %>% group_by(covertype) %>% count() %>% arrange(-n)
+```
+
+### Plots of topographic variables
+
+```{r terrainplots, echo=FALSE}
+p1<-ggplot(fwdat, aes(elevation, fill=covertype, color=covertype)) +
+geom_histogram(aes(y = ..count..), binwidth = 50) +
+  scale_fill_manual(values=c("#DFB968", "#D1CACA", "#7AD4D5", "#C059DE")) + 
+  theme(legend.position="left",legend.title=element_blank()) +
+  xlab("Elevation (m)") + ggtitle("Elevation") +
+  facet_wrap(vars(isl_fld), nrow=1)
+
+p2<-ggplot(fwdat, aes(elevation, fill=covertype, color=covertype)) +
+geom_histogram(aes(y = ..count..), binwidth = 50) +
+  scale_fill_manual(values=c("#DFB968", "#D1CACA", "#7AD4D5", "#C059DE")) + 
+  theme(legend.position="none",legend.title=element_blank()) +
+  xlab("Elevation (m)") + ggtitle("") 
+
+p3<-ggplot(fwdat, aes(heat.load.index, fill=covertype, color=covertype)) +
+geom_histogram(aes(y = ..count..), binwidth = 0.1) +
+  scale_fill_manual(values=c("#DFB968", "#D1CACA", "#7AD4D5", "#C059DE")) + 
+  theme(legend.position="left",legend.title=element_blank()) +
+  xlab("HLI") + ggtitle("Heat Load Index") +
+  facet_wrap(vars(isl_fld), nrow=1)
+
+p4<-ggplot(fwdat, aes(heat.load.index, fill=covertype), color=covertype) +
+geom_histogram(aes(y = ..count..), binwidth = 0.1) +
+  scale_fill_manual(values=c("#DFB968", "#D1CACA", "#7AD4D5", "#C059DE")) + 
+  theme(legend.position="none",legend.title=element_blank()) +
+  xlab("HLI") + ggtitle("")
+
+p5<-ggplot(fwdat, aes(relative.position, fill=covertype, color=covertype)) +
+geom_histogram(aes(y = ..count..), binwidth = 0.1) +
+  scale_fill_manual(values=c("#DFB968", "#D1CACA", "#7AD4D5", "#C059DE")) + 
+  theme(legend.position="left",legend.title=element_blank()) +
+  xlab("RP") + ggtitle("Relative Position") +
+  facet_wrap(vars(isl_fld), nrow=1)
+
+p6<-ggplot(fwdat, aes(relative.position, fill=covertype, color=covertype)) +
+geom_histogram(aes(y = ..count..), binwidth = 0.1) +
+  scale_fill_manual(values=c("#DFB968", "#D1CACA", "#7AD4D5", "#C059DE")) + 
+  theme(legend.position="none",legend.title=element_blank()) +
+  xlab("RP") + ggtitle("") 
+
+p7<-ggplot(fwdat, aes(topo.ruggedness.index, fill=covertype, color=covertype)) +
+geom_histogram(aes(y = ..count..), binwidth = 1) +
+  scale_fill_manual(values=c("#DFB968", "#D1CACA", "#7AD4D5", "#C059DE")) + theme(legend.position="right",legend.title=element_blank()) +
+  xlab("TRI") + ggtitle("Topographic Ruggedness Index") +
+  facet_wrap(vars(isl_fld), nrow=1)
+
+p8<-ggplot(fwdat, aes(topo.ruggedness.index, fill=covertype, color=covertype)) +
+geom_histogram(aes(y = ..count..), binwidth = 1) +
+  scale_fill_manual(values=c("#DFB968", "#D1CACA", "#7AD4D5", "#C059DE")) + 
+  theme(legend.position="none",legend.title=element_blank()) +
+  xlab("TRI") + ggtitle("") 
+
+p13<-ggplot(fwdat, aes(topo.wetness.index, fill=covertype, color=covertype)) +
+geom_histogram(aes(y = ..count..), binwidth = 1) +
+  scale_fill_manual(values=c("#DFB968", "#D1CACA", "#7AD4D5", "#C059DE")) + theme(legend.position="right",legend.title=element_blank()) +
+  xlab("TWI") + ggtitle("Topographic Wetness Index") +
+  facet_wrap(vars(isl_fld), nrow=1)
+
+p14<-ggplot(fwdat, aes(topo.wetness.index, fill=covertype, color=covertype)) +
+geom_histogram(aes(y = ..count..), binwidth = 1) +
+  scale_fill_manual(values=c("#DFB968", "#D1CACA", "#7AD4D5", "#C059DE")) + 
+  theme(legend.position="none",legend.title=element_blank()) +
+  xlab("TWI") + ggtitle("") 
+
+p9<-ggplot(fwdat, aes(aspect.deg, fill=covertype, color=covertype)) +
+geom_histogram(aes(y = ..count..), binwidth = 30) +
+  scale_x_continuous(limits = c(0, 360)) +#, breaks=sequence(0,360, by=2)) + 
+  scale_fill_manual(values=c("#DFB968", "#D1CACA", "#7AD4D5", "#C059DE")) + 
+  theme(legend.title=element_blank()) +
+  xlab("") + ggtitle("Aspect") +
+coord_polar(theta = "x", start = 0, direction = 1) +
+  facet_wrap(vars(isl_fld), nrow=1)
+
+p10<-ggplot(fwdat, aes(aspect.deg, fill=covertype, color=covertype)) +
+geom_histogram(aes(y = ..count..), binwidth = 30) +
+  scale_x_continuous(limits = c(0, 360)) +#, breaks=sequence(0,360, by=2)) + 
+  scale_fill_manual(values=c("#DFB968", "#D1CACA", "#7AD4D5", "#C059DE")) + 
+  theme(legend.position="left",legend.title=element_blank()) +
+  xlab("") + ggtitle("") +
+coord_polar(theta = "x", start = 0, direction = 1) 
+
+p11<-ggplot(fwdat, aes(slope.deg, fill=covertype, color=covertype)) +
+geom_histogram(aes(y = ..count..), binwidth = 5) +
+  scale_x_continuous(limits = c(0, 50)) +
+  scale_fill_manual(values=c("#DFB968", "#D1CACA", "#7AD4D5", "#C059DE")) + 
+  theme(legend.title=element_blank()) +
+  xlab("") + ggtitle("Slope") +
+coord_polar(theta = "x", start = 0, direction = 1) +
+  facet_wrap(vars(isl_fld), nrow=1)
+
+p12<-ggplot(fwdat, aes(slope.deg, fill=covertype, color=covertype)) +
+geom_histogram(aes(y = ..count..), binwidth = 5) +
+  scale_x_continuous(limits = c(0, 50)) +
+  scale_fill_manual(values=c("#DFB968", "#D1CACA", "#7AD4D5", "#C059DE")) + 
+  theme(legend.title=element_blank()) +
+  xlab("") + ggtitle("") +
+coord_polar(theta = "x", start = 0, direction = 1) 
+
+```
+
+```{r plotlayouts, echo=FALSE, fig.height=8, fig.width=11, fig.align='center'}
+p1/p2 + plot_layout(guides='collect')
+p3/p4 + plot_layout(guides='collect')
+p5/p6 + plot_layout(guides='collect')
+p7/p8 + plot_layout(guides='collect')
+p13/p14 + plot_layout(guides='collect')
+p9/p10 + plot_layout(guides='collect', widths=c(3,2))
+p11 /p12 + plot_layout(guides='collect', widths=c(3,2))
+
+```
+
+
