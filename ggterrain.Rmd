@@ -52,7 +52,12 @@ fwdat$slope.deg<-fwdat$slope*180/pi
 
 #### Topography can influence many ecological processes because it is closely related to microclimates and their effects on soil properties, seed dispersal and germination, tree regeneration and growth. It is also a major factor in fire spread, both in facilitating spread and creating shelters or firebreaks. This report takes a first look at the topographic characteristics of the plot locations by covertype and by mountain range. 
 
-#### First, a summary of sample size for each cover type.
+
+![](C:/Users/sandr/Documents/veg_fire_x2/conceptual_v1.jpg)
+
+
+
+#### A summary of sample size for each cover type.
 
 ```{r covertypes, echo=FALSE}
 fwdat %>% group_by(covertype) %>% count() %>% arrange(-n)
@@ -170,5 +175,4 @@ p9/p10 + plot_layout(guides='collect', widths=c(3,2))
 p11 /p12 + plot_layout(guides='collect', widths=c(3,2))
 
 ```
-
 
